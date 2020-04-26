@@ -1,64 +1,24 @@
-const defaultBlockSize = 10;
+import { Path, IPoint, Tower, Canvas } from './models';
+import { defaultBlockSize } from './constants';
 
-export interface IPoint {
-    x: number;
-    y: number;
-}
-
-export class Tower {
-    /**
-     *
-     */
-    constructor(
-        private position: IPoint,
-        private blockSize = defaultBlockSize
-    ) {}
-
-    get x(): number {
-        return this.position.x;
-    }
-
-    get y(): number {
-        return this.position.y;
-    }
-
-    public moveTo(point: IPoint) {
-        this.position = point;
-    }
-
-    public pointInside(point: IPoint): boolean {
-        const xInside = point.x >= this.x && point.x <= this.x + this.blockSize;
-        const yInside = point.y >= this.y && point.y <= this.y + this.blockSize;
-        return xInside && yInside;
-    }
-}
-
-export class Canvas {
-    /**
-     *
-     */
-    constructor(
-        private canvas: HTMLCanvasElement,
-        private blockSize = defaultBlockSize
-    ) {}
-
-    private get ctx(): CanvasRenderingContext2D {
-        return this.canvas.getContext('2d') as CanvasRenderingContext2D;
-    }
-
-    public drawTower(position: IPoint, tower: Tower): void {
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillRect(tower.x, tower.y, this.blockSize, this.blockSize);
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillRect(
-            position.x,
-            position.y,
-            this.blockSize,
-            this.blockSize
-        );
-        tower.moveTo(position);
-    }
-}
+const defaultPath: Path = new Path([
+    {
+        x: 10,
+        y: 10,
+    },
+    {
+        x: 10,
+        y: 300,
+    },
+    {
+        x: 200,
+        y: 300,
+    },
+    {
+        x: 300,
+        y: 10,
+    },
+]);
 
 export class TowerDefenseGame {
     private dragTower = false;
@@ -93,6 +53,10 @@ export class TowerDefenseGame {
     });
 
     private canvas: Canvas;
+    private path: Path;
+    private intervalId?: NodeJS.Timeout;
+    private fps = 10;
+    private progress = 0;
 
     constructor(
         private htmlCanvas: HTMLCanvasElement,
@@ -106,16 +70,30 @@ export class TowerDefenseGame {
         );
         htmlCanvas.addEventListener('mouseup', (ev) => this.handleMouseup(ev));
         this.canvas = new Canvas(htmlCanvas);
+        this.path = defaultPath;
     }
 
-    start(): void {
+    public start(): void {
         console.log('game started');
-        this.canvas.drawTower(
-            {
-                x: this.tower.x,
-                y: this.tower.y,
-            },
-            this.tower
-        );
+        this.intervalId = setInterval(() => {
+            if (this.progress >= 100) {
+                this.stop();
+            } else {
+                this.run();
+            }
+        }, 1000 / this.fps);
+    }
+
+    private run(): void {
+        const nextPoint = this.path.getPointAtPercent(this.progress);
+        this.canvas.drawTower(nextPoint, this.tower);
+        this.canvas.drawPath(this.path);
+        this.progress++;
+    }
+
+    public stop(): void {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+        }
     }
 }
