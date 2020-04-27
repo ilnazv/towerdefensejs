@@ -1,5 +1,9 @@
-import { Path, IPoint, Tower, Canvas, Enemy } from './models';
+import { IPoint } from './models';
 import { defaultBlockSize } from './constants';
+import { Path } from './path';
+import { Tower } from './towers';
+import { Enemy } from './enemy';
+import { Canvas } from './canvas';
 
 const defaultPath: Path = new Path([
     {
