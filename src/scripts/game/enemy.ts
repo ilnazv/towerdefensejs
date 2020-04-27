@@ -45,7 +45,9 @@ export class Enemy extends Item {
         } else {
             ctx.fillStyle = color;
         }
-        ctx.fillRect(this.leftTopX, this.leftTopY, this.width, this.height);
+        const rect = new Path2D();
+        rect.rect(this.leftTopX, this.leftTopY, this.width, this.height);
+        ctx.fill(rect);
         this.projectiles.forEach((x) => x.draw(ctx));
     }
 

@@ -36,6 +36,10 @@ export interface IDrawable {
     draw(ctx: CanvasRenderingContext2D, color?: string): void;
 }
 
+export interface IClickable {
+    onClick(ctx: CanvasRenderingContext2D, point: IPoint): void;
+}
+
 export function getRandomArbitrary(min: number, max: number): number {
     return Math.random() * (max - min) + min;
 }

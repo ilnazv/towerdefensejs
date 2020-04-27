@@ -1,4 +1,5 @@
-import { IDrawable, ISize } from './models';
+import { IDrawable, ISize, IPoint } from './models';
+import { MainMenu } from './game';
 
 export class Canvas {
     public emptyColor = 'white';
@@ -21,5 +22,11 @@ export class Canvas {
             const item = this.items[index];
             item.draw(this.ctx);
         }
+    }
+
+    public handleOnClick(point: IPoint): void {
+        this.items
+            .filter((x) => x instanceof MainMenu)
+            .forEach((x) => (x as MainMenu).onClick(this.ctx, point));
     }
 }

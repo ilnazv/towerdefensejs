@@ -1,4 +1,4 @@
-import { IPoint } from './models';
+import { IPoint, IDrawable, ISize, IClickable } from './models';
 import { defaultBlockSize } from './constants';
 import { Path } from './path';
 import { Tower } from './towers';
@@ -60,6 +60,13 @@ export class TowerDefenseGame {
         this.dragTower = false;
     }
 
+    private handleMouseClicks(ev: MouseEvent): void {
+        this.canvas.handleOnClick({
+            x: ev.offsetX,
+            y: ev.offsetY,
+        });
+    }
+
     private towers: Tower[] = [
         new Tower({
             x: 50,
@@ -79,6 +86,7 @@ export class TowerDefenseGame {
     private fps = 60;
     private progress = 0;
     private lifes = 7;
+    private canvasSize = { width: 600, height: 400 };
 
     constructor(
         private htmlCanvas: HTMLCanvasElement,
@@ -91,10 +99,26 @@ export class TowerDefenseGame {
             this.handleMousemove(ev)
         );
         htmlCanvas.addEventListener('mouseup', (ev) => this.handleMouseup(ev));
-        this.canvas = new Canvas(htmlCanvas, { width: 600, height: 400 });
+        htmlCanvas.addEventListener('startgame', this.start);
+        htmlCanvas.addEventListener('click', (ev) =>
+            this.handleMouseClicks(ev)
+        );
+        this.canvas = new Canvas(htmlCanvas, this.canvasSize);
     }
 
-    public start(): void {
+    public initialize(): void {
+        // this.start();
+        this.showMainMenu();
+    }
+
+    private showMainMenu() {
+        this.canvas.add(
+            new MainMenu(this.canvasSize, () => console.log('start click'))
+        );
+        this.canvas.update();
+    }
+
+    private start(): void {
         console.log('game started');
         this.canvas.add(...this.towers, this.path);
         this.intervalId = setInterval(() => {
@@ -155,5 +179,50 @@ export class TowerDefenseGame {
         if (this.intervalId) {
             clearInterval(this.intervalId);
         }
+    }
+}
+
+export class MainMenu implements IDrawable, IClickable {
+    private path: Path2D;
+    constructor(
+        private canvasSize: ISize,
+        private onClickHandler: () => void
+    ) {}
+
+    onClick(ctx: CanvasRenderingContext2D, point: IPoint): void {
+        if (ctx.isPointInPath(this.path, point.x, point.y)) {
+            this.onClickHandler();
+        }
+    }
+
+    draw(ctx: CanvasRenderingContext2D, color = '#A9B665'): void {
+        const buttonWidth = 100;
+        const buttonHeight = 50;
+        const leftTopX = this.canvasSize.width / 2 - buttonWidth / 2;
+        const leftTopY = this.canvasSize.height / 2 - buttonHeight / 2;
+        const radgrad = ctx.createRadialGradient(
+            leftTopX + 45,
+            leftTopY + 45,
+            10,
+            leftTopX + 52,
+            leftTopY + 50,
+            100
+        );
+        radgrad.addColorStop(0, '#A7D30C');
+        radgrad.addColorStop(1, '#019F62');
+        ctx.fillStyle = radgrad;
+        this.path = new Path2D();
+        this.path.rect(leftTopX, leftTopY, buttonWidth, buttonHeight);
+        ctx.fill(this.path);
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'black';
+        ctx.fillText(
+            'Start',
+            leftTopX + buttonWidth / 2,
+            leftTopY + buttonHeight / 2
+        );
+        // ctx.isPointInPath();
     }
 }
