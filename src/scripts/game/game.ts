@@ -1,4 +1,4 @@
-import { Path, IPoint, Tower, Canvas } from './models';
+import { Path, IPoint, Tower, Canvas, Enemy } from './models';
 import { defaultBlockSize } from './constants';
 
 const defaultPath: Path = new Path([
@@ -39,7 +39,7 @@ export class TowerDefenseGame {
             y: ev.offsetY,
         };
         if (this.dragTower) {
-            this.canvas.drawTower(coords, this.tower);
+            this.canvas.drawTower(this.tower, coords);
         }
     }
 
@@ -48,6 +48,11 @@ export class TowerDefenseGame {
     }
 
     private tower: Tower = new Tower({
+        x: 20,
+        y: 20,
+    });
+
+    private enemy: Enemy = new Enemy({
         x: 10,
         y: 10,
     });
@@ -86,8 +91,9 @@ export class TowerDefenseGame {
 
     private run(): void {
         const nextPoint = this.path.getPointAtPercent(this.progress);
-        this.canvas.drawTower(nextPoint, this.tower);
         this.canvas.drawPath(this.path);
+        this.canvas.drawEnemy(this.enemy, nextPoint);
+        this.canvas.drawTower(this.tower);
         this.progress++;
     }
 
