@@ -130,6 +130,7 @@ export class TowerDefenseGame {
                 }
             }
         });
+        this.tower.attack(this.enemies);
         this.canvas.update();
     }
 

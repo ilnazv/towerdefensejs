@@ -5,13 +5,42 @@ export interface IPoint {
     y: number;
 }
 
+export class PointHelper {
+    static pointInsideRect(
+        point: IPoint,
+        rectCenter: IPoint,
+        size: ISize
+    ): boolean {
+        const xInside =
+            point.x >= rectCenter.x - size.width / 2 &&
+            point.x <= rectCenter.x + size.width / 2;
+        const yInside =
+            point.y >= rectCenter.y - size.width / 2 &&
+            point.y <= rectCenter.y + size.width / 2;
+        return xInside && yInside;
+    }
+
+    static pointInsideCircle(
+        point: IPoint,
+        circleCenter: IPoint,
+        radius: number
+    ): boolean {
+        return (
+            Math.sqrt(
+                (point.x - circleCenter.x) ** 2 +
+                    (point.y - circleCenter.y) ** 2
+            ) < radius
+        );
+    }
+}
+
 export interface IDrawable {
     draw(ctx: CanvasRenderingContext2D, color?: string): void;
 }
 
 export class Item implements IDrawable {
     constructor(
-        private position: IPoint,
+        public position: IPoint,
         private blockSize = defaultBlockSize,
         public color = 'black'
     ) {}
@@ -51,6 +80,9 @@ export class Item implements IDrawable {
         this.position = point;
     }
 
+    /**
+     * @deprecated
+     */
     public pointInside(point: IPoint): boolean {
         const xInside = point.x >= this.x && point.x <= this.x + this.blockSize;
         const yInside = point.y >= this.y && point.y <= this.y + this.blockSize;
@@ -64,6 +96,12 @@ export class Item implements IDrawable {
 
 export class Enemy extends Item {
     private progress = 0;
+    private _dead = false;
+    private healthPoints = 100;
+
+    get dead(): boolean {
+        return this._dead;
+    }
 
     constructor(
         private path: Path,
@@ -74,12 +112,26 @@ export class Enemy extends Item {
         super(path.points[0], blockSize, color);
     }
 
+    public doDamage(dmg: number): void {
+        this.healthPoints -= dmg;
+        if (this.healthPoints <= 0) {
+            this._dead = true;
+        }
+    }
+
     public draw(ctx: CanvasRenderingContext2D, color = this.color): void {
-        ctx.fillStyle = color;
+        if (this.dead) {
+            ctx.fillStyle = 'gray';
+        } else {
+            ctx.fillStyle = color;
+        }
         ctx.fillRect(this.leftTopX, this.leftTopY, this.width, this.height);
     }
 
     public moveForward(): boolean {
+        if (this.dead) {
+            return false;
+        }
         const nextPoint = this.path.getPointAtPercent(this.progress);
         if (!nextPoint) {
             return;
@@ -96,7 +148,10 @@ export class Enemy extends Item {
         return false;
     }
 }
+
 export class Tower extends Item {
+    private damage = 1;
+
     constructor(
         position: IPoint,
         blockSize = defaultBlockSize,
@@ -111,6 +166,15 @@ export class Tower extends Item {
         ctx.arc(this.leftTopX, this.leftTopY, this.width, 0, 360);
         ctx.fill();
         ctx.closePath();
+    }
+
+    public attack(enemies: Enemy[]): void {
+        for (let index = 0; index < enemies.length; index++) {
+            const enemy = enemies[index];
+            if (PointHelper.pointInsideCircle(enemy, this.position, 100)) {
+                enemy.doDamage(this.damage);
+            }
+        }
     }
 }
 
