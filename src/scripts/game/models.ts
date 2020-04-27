@@ -59,13 +59,30 @@ export class Item {
 }
 
 export class Enemy extends Item {
-    constructor(position: IPoint, blockSize = defaultBlockSize, color = 'red') {
+    private progress = 0;
+
+    constructor(
+        position: IPoint,
+        private path: Path,
+        blockSize = defaultBlockSize,
+        color = 'red',
+        private moveSpeed = 10
+    ) {
         super(position, blockSize, color);
     }
 
     public draw(ctx: CanvasRenderingContext2D, color = this.color): void {
         ctx.fillStyle = color;
         ctx.fillRect(this.leftTopX, this.leftTopY, this.width, this.height);
+    }
+
+    public moveForward(): void {
+        const nextPoint = this.path.getPointAtPercent(this.progress);
+        if (!nextPoint) {
+            return;
+        }
+        this.moveTo(nextPoint);
+        this.progress++;
     }
 }
 export class Tower extends Item {
@@ -86,16 +103,36 @@ export class Tower extends Item {
     }
 }
 
+export interface ISize {
+    width: number;
+    height: number;
+}
+
 export class Canvas {
     public emptyColor = 'white';
+    private items: Item[] = [];
 
     constructor(
         private canvas: HTMLCanvasElement,
+        private size: ISize,
         private blockSize = defaultBlockSize
     ) {}
 
-    get ctx(): CanvasRenderingContext2D {
+    private get ctx(): CanvasRenderingContext2D {
         return this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    }
+
+    public add(...items: Item[]): void {
+        this.items.push(...items);
+    }
+
+    public update(): void {
+        this.ctx.fillStyle = this.emptyColor;
+        this.ctx.fillRect(0, 0, this.size.width, this.size.height);
+        for (let index = 0; index < this.items.length; index++) {
+            const item = this.items[index];
+            item.draw(this.ctx);
+        }
     }
 
     private drawMovable(item: Item, position?: IPoint): void {
@@ -106,47 +143,55 @@ export class Canvas {
         item.draw(this.ctx);
     }
 
-    public drawTower(tower: Tower, position?: IPoint): void {
+    private drawTower(tower: Tower, position?: IPoint): void {
         this.drawMovable(tower, position);
     }
 
-    public drawEnemy(enemy: Enemy, position: IPoint): void {
+    private drawEnemy(enemy: Enemy, position: IPoint): void {
         this.drawMovable(enemy, position);
     }
 
-    public drawPath(path: Path): void {
+    private drawPath(path: Path): void {
         path.draw(this.ctx);
     }
 }
 
 export class Path {
-    constructor(public path: IPoint[], public color = 'gray') {}
+    private percentPathMap = new Map<{ start: number; end: number }, number>();
+    private length = 0;
 
-    public getPointAtPercent(percent: number): IPoint {
-        let length = 0;
-        const percentPathMap = new Map<
-            { start: number; end: number },
-            number
-        >();
+    constructor(public path: IPoint[], public color = 'gray') {
+        this.calculateSections();
+    }
+
+    private calculateSections(): void {
         for (let index = 1; index < this.path.length; index++) {
             const point = this.path[index];
             const prevPoint = this.path[index - 1];
-            const start = length;
-            length += Math.abs(prevPoint.x - point.x + (prevPoint.y - point.y));
-            percentPathMap.set(
+            const start = this.length;
+            this.length += Math.abs(
+                prevPoint.x - point.x + (prevPoint.y - point.y)
+            );
+            this.percentPathMap.set(
                 {
                     start,
-                    end: length,
+                    end: this.length,
                 },
                 index
             );
         }
-        const step = (length / 100) * percent;
-        const sections = [...percentPathMap.keys()];
+    }
+
+    public getPointAtPercent(percent: number): IPoint {
+        const step = (this.length / 100) * percent;
+        const sections = [...this.percentPathMap.keys()];
         const sectionKey = sections.find(
             ({ start, end }) => step >= start && step < end
         );
-        const section = percentPathMap.get(sectionKey);
+        const section = this.percentPathMap.get(sectionKey);
+        if (!section) {
+            return null;
+        }
         const sectionPercent =
             (step - sectionKey.start) /
             ((sectionKey.end - sectionKey.start) / 100) /

@@ -39,7 +39,8 @@ export class TowerDefenseGame {
             y: ev.offsetY,
         };
         if (this.dragTower) {
-            this.canvas.drawTower(this.tower, coords);
+            this.tower.moveTo(coords);
+            this.canvas.update();
         }
     }
 
@@ -51,16 +52,19 @@ export class TowerDefenseGame {
         x: 20,
         y: 20,
     });
+    private path: Path = defaultPath;
 
-    private enemy: Enemy = new Enemy({
-        x: 10,
-        y: 10,
-    });
+    private enemy: Enemy = new Enemy(
+        {
+            x: 10,
+            y: 10,
+        },
+        this.path
+    );
 
     private canvas: Canvas;
-    private path: Path;
     private intervalId?: NodeJS.Timeout;
-    private fps = 10;
+    private fps = 60;
     private progress = 0;
 
     constructor(
@@ -74,12 +78,12 @@ export class TowerDefenseGame {
             this.handleMousemove(ev)
         );
         htmlCanvas.addEventListener('mouseup', (ev) => this.handleMouseup(ev));
-        this.canvas = new Canvas(htmlCanvas);
-        this.path = defaultPath;
+        this.canvas = new Canvas(htmlCanvas, { width: 600, height: 800 });
     }
 
     public start(): void {
         console.log('game started');
+        this.canvas.add(this.enemy, this.tower);
         this.intervalId = setInterval(() => {
             if (this.progress >= 100) {
                 this.stop();
@@ -90,11 +94,8 @@ export class TowerDefenseGame {
     }
 
     private run(): void {
-        const nextPoint = this.path.getPointAtPercent(this.progress);
-        this.canvas.drawPath(this.path);
-        this.canvas.drawEnemy(this.enemy, nextPoint);
-        this.canvas.drawTower(this.tower);
-        this.progress++;
+        this.enemy.moveForward();
+        this.canvas.update();
     }
 
     public stop(): void {
