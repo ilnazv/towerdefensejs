@@ -5,7 +5,11 @@ export interface IPoint {
     y: number;
 }
 
-export class Item {
+export interface IDrawable {
+    draw(ctx: CanvasRenderingContext2D, color?: string): void;
+}
+
+export class Item implements IDrawable {
     constructor(
         private position: IPoint,
         private blockSize = defaultBlockSize,
@@ -62,13 +66,12 @@ export class Enemy extends Item {
     private progress = 0;
 
     constructor(
-        position: IPoint,
         private path: Path,
         blockSize = defaultBlockSize,
         color = 'red',
-        private moveSpeed = 0.1
+        private moveSpeed = 0.3
     ) {
-        super(position, blockSize, color);
+        super(path.points[0], blockSize, color);
     }
 
     public draw(ctx: CanvasRenderingContext2D, color = this.color): void {
@@ -76,20 +79,21 @@ export class Enemy extends Item {
         ctx.fillRect(this.leftTopX, this.leftTopY, this.width, this.height);
     }
 
-    public moveForward(): void {
+    public moveForward(): boolean {
         const nextPoint = this.path.getPointAtPercent(this.progress);
         if (!nextPoint) {
             return;
         }
         this.moveTo(nextPoint);
         if (this.progress >= 100) {
-            return;
+            return true;
         }
         if (this.progress + this.moveSpeed > 100) {
             this.progress = 100;
-            return;
+            return true;
         }
         this.progress += this.moveSpeed;
+        return false;
     }
 }
 export class Tower extends Item {
@@ -117,7 +121,7 @@ export interface ISize {
 
 export class Canvas {
     public emptyColor = 'white';
-    private items: Item[] = [];
+    private items: IDrawable[] = [];
 
     constructor(
         private canvas: HTMLCanvasElement,
@@ -129,7 +133,7 @@ export class Canvas {
         return this.canvas.getContext('2d') as CanvasRenderingContext2D;
     }
 
-    public add(...items: Item[]): void {
+    public add(...items: IDrawable[]): void {
         this.items.push(...items);
     }
 
@@ -141,40 +145,20 @@ export class Canvas {
             item.draw(this.ctx);
         }
     }
-
-    private drawMovable(item: Item, position?: IPoint): void {
-        if (position) {
-            item.draw(this.ctx, this.emptyColor);
-            item.moveTo(position);
-        }
-        item.draw(this.ctx);
-    }
-
-    private drawTower(tower: Tower, position?: IPoint): void {
-        this.drawMovable(tower, position);
-    }
-
-    private drawEnemy(enemy: Enemy, position: IPoint): void {
-        this.drawMovable(enemy, position);
-    }
-
-    private drawPath(path: Path): void {
-        path.draw(this.ctx);
-    }
 }
 
-export class Path {
+export class Path implements IDrawable {
     private percentPathMap = new Map<{ start: number; end: number }, number>();
     private length = 0;
 
-    constructor(public path: IPoint[], public color = 'gray') {
+    constructor(public points: IPoint[], public color = 'gray') {
         this.calculateSections();
     }
 
     private calculateSections(): void {
-        for (let index = 1; index < this.path.length; index++) {
-            const point = this.path[index];
-            const prevPoint = this.path[index - 1];
+        for (let index = 1; index < this.points.length; index++) {
+            const point = this.points[index];
+            const prevPoint = this.points[index - 1];
             const start = this.length;
             this.length += Math.abs(
                 prevPoint.x - point.x + (prevPoint.y - point.y)
@@ -203,8 +187,8 @@ export class Path {
             (step - sectionKey.start) /
             ((sectionKey.end - sectionKey.start) / 100) /
             100;
-        const point = this.path[section];
-        const prevPoint = this.path[section - 1];
+        const point = this.points[section];
+        const prevPoint = this.points[section - 1];
         var dx = point.x - prevPoint.x;
         var dy = point.y - prevPoint.y;
         var X = prevPoint.x + dx * sectionPercent;
@@ -217,8 +201,8 @@ export class Path {
         ctx.beginPath();
         ctx.setLineDash([5, 15]);
         ctx.lineCap = 'round';
-        for (let index = 0; index < this.path.length; index++) {
-            const point = this.path[index];
+        for (let index = 0; index < this.points.length; index++) {
+            const point = this.points[index];
             if (index === 0) {
                 ctx.moveTo(point.x, point.y);
             } else {
@@ -226,5 +210,21 @@ export class Path {
             }
         }
         ctx.stroke();
+        this.drawStartEnd(ctx);
+    }
+
+    private drawStartEnd(ctx: CanvasRenderingContext2D): void {
+        ctx.beginPath();
+        ctx.fillStyle = 'orange';
+        ctx.arc(this.points[0].x, this.points[0].y, 10, 0, 360);
+        ctx.arc(
+            this.points[this.points.length - 1].x,
+            this.points[this.points.length - 1].y,
+            10,
+            0,
+            360
+        );
+        ctx.fill();
+        ctx.closePath();
     }
 }

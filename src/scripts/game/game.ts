@@ -18,6 +18,14 @@ const defaultPath: Path = new Path([
         x: 300,
         y: 10,
     },
+    {
+        x: 500,
+        y: 10,
+    },
+    {
+        x: 500,
+        y: 300,
+    },
 ]);
 
 export class TowerDefenseGame {
@@ -49,8 +57,8 @@ export class TowerDefenseGame {
     }
 
     private tower: Tower = new Tower({
-        x: 20,
-        y: 20,
+        x: 50,
+        y: 50,
     });
     private path: Path = defaultPath;
 
@@ -60,6 +68,7 @@ export class TowerDefenseGame {
     private intervalId?: NodeJS.Timeout;
     private fps = 60;
     private progress = 0;
+    private lifes = 7;
 
     constructor(
         private htmlCanvas: HTMLCanvasElement,
@@ -72,12 +81,12 @@ export class TowerDefenseGame {
             this.handleMousemove(ev)
         );
         htmlCanvas.addEventListener('mouseup', (ev) => this.handleMouseup(ev));
-        this.canvas = new Canvas(htmlCanvas, { width: 600, height: 800 });
+        this.canvas = new Canvas(htmlCanvas, { width: 600, height: 400 });
     }
 
     public start(): void {
         console.log('game started');
-        this.canvas.add(this.tower);
+        this.canvas.add(this.tower, this.path);
         this.intervalId = setInterval(() => {
             if (this.progress >= 100) {
                 this.stop();
@@ -90,25 +99,37 @@ export class TowerDefenseGame {
 
     private startEnemiesSpawn(): void {
         let enemiesNumber = 0;
-        const enemySpawnInterval = setInterval(() => {
-            if (enemiesNumber > 10) {
-                clearInterval(enemySpawnInterval);
-            }
-            const newEnemy = new Enemy(
-                {
-                    x: 10,
-                    y: 10,
-                },
-                this.path
-            );
+        const spawnEnemy = () => {
+            const newEnemy = new Enemy(this.path);
             this.enemies.push(newEnemy);
             this.canvas.add(newEnemy);
             enemiesNumber++;
+        };
+        spawnEnemy();
+        const enemySpawnInterval = setInterval(() => {
+            if (enemiesNumber > 10) {
+                if (enemySpawnInterval) {
+                    clearInterval(enemySpawnInterval);
+                }
+                return;
+            }
+            spawnEnemy();
         }, 3000);
     }
 
     private run(): void {
-        this.enemies.forEach((x) => x.moveForward());
+        this.enemies.forEach((x) => {
+            const reachedFinish = x.moveForward();
+            if (reachedFinish) {
+                this.lifes--;
+                this.enemies = this.enemies.filter((y) => y !== x);
+                console.log('lifes: ', this.lifes);
+                if (this.lifes <= 0) {
+                    this.stop();
+                    console.log('game over');
+                }
+            }
+        });
         this.canvas.update();
     }
 
