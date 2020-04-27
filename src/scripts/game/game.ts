@@ -62,7 +62,7 @@ export class TowerDefenseGame {
             y: 50,
         }),
         new Tower({
-            x: 50,
+            x: 100,
             y: 250,
         }),
     ];
@@ -106,9 +106,9 @@ export class TowerDefenseGame {
     private async startEnemiesSpawn(level: number): Promise<boolean> {
         console.log('level: ', level);
         let enemiesCounter = 1;
-        const enemiesNumber = level === 1 ? 2 : 20;
+        const enemiesNumber = level === 1 ? 3 : 20;
         const spawnSpeed = level === 1 ? 1000 : 500;
-        const moveSpeed = level === 1 ? 0.3 : 0.1;
+        const moveSpeed = level === 1 ? 0.2 : 0.1;
         const spawnEnemy = () => {
             const newEnemy = new Enemy(this.path, moveSpeed);
             this.enemies.push(newEnemy);

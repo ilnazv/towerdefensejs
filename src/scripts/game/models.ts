@@ -94,10 +94,49 @@ export class Item implements IDrawable {
     }
 }
 
+export class Projectile implements IDrawable {
+    private progress = 0;
+    private speed = 0.3;
+
+    constructor(
+        public dmg: number,
+        private position: IPoint,
+        private target: Enemy
+    ) {}
+
+    public draw(ctx: CanvasRenderingContext2D, color = 'green'): void {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(this.position.x, this.position.y);
+        const targetPosition = this.target.position;
+        var dx = targetPosition.x - this.position.x;
+        var dy = targetPosition.y - this.position.y;
+        var X = this.position.x + dx * this.progress;
+        var Y = this.position.y + dy * this.progress;
+        const pointer = { x: Math.round(X), y: Math.round(Y) };
+        ctx.lineTo(pointer.x, pointer.y);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    public moveForward(): boolean {
+        const targetPosition = this.target.position;
+        var dx = targetPosition.x - this.position.x;
+        var dy = targetPosition.y - this.position.y;
+        var X = this.position.x + dx * this.progress;
+        var Y = this.position.y + dy * this.progress;
+        this.position = { x: Math.round(X), y: Math.round(Y) };
+        this.progress += this.speed;
+        return this.progress >= 1;
+    }
+}
+
 export class Enemy extends Item {
     private progress = 0;
     private _dead = false;
     private _healthPoints = 100;
+
+    private projectiles: Projectile[] = [];
 
     get dead(): boolean {
         return this._dead;
@@ -116,6 +155,10 @@ export class Enemy extends Item {
         super(path.points[0], blockSize, color);
     }
 
+    public shootAt(dmg: number, towerPosition: IPoint): void {
+        this.projectiles.push(new Projectile(dmg, towerPosition, this));
+    }
+
     public doDamage(dmg: number): void {
         this._healthPoints -= dmg;
         if (this._healthPoints <= 0) {
@@ -130,9 +173,19 @@ export class Enemy extends Item {
             ctx.fillStyle = color;
         }
         ctx.fillRect(this.leftTopX, this.leftTopY, this.width, this.height);
+        this.projectiles.forEach((x) => x.draw(ctx));
     }
 
     public moveForward(): boolean {
+        const reachedProjectiles = this.projectiles.filter((x) =>
+            x.moveForward()
+        );
+        if (reachedProjectiles.length > 0) {
+            reachedProjectiles.forEach((x) => this.doDamage(x.dmg));
+            this.projectiles = this.projectiles.filter(
+                (x) => !reachedProjectiles.includes(x)
+            );
+        }
         if (this.dead) {
             return false;
         }
@@ -158,9 +211,11 @@ function getRandomArbitrary(min: number, max: number): number {
 }
 
 export class Tower extends Item {
-    private damageStart = 0.5;
-    private damageEnd = 1.5;
+    private damageStart = 45;
+    private damageEnd = 65;
     private attackRange = 100;
+    private attackSpeed = 5;
+    private attackCounter = 100;
 
     private get damage(): number {
         return getRandomArbitrary(this.damageStart, this.damageEnd);
@@ -175,16 +230,19 @@ export class Tower extends Item {
     }
 
     public draw(ctx: CanvasRenderingContext2D, color = this.color): void {
+        ctx.save();
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.arc(this.leftTopX, this.leftTopY, this.width, 0, 360);
         ctx.fill();
         ctx.closePath();
         this.drawAttackRange(ctx);
+        ctx.restore();
     }
 
     private drawAttackRange(ctx: CanvasRenderingContext2D): void {
         ctx.beginPath();
+        ctx.setLineDash([5, 15]);
         ctx.fillStyle = 'gray';
         ctx.arc(this.leftTopX, this.leftTopY, this.attackRange, 0, 360);
         ctx.stroke();
@@ -192,6 +250,10 @@ export class Tower extends Item {
     }
 
     public attack(enemies: Enemy[]): void {
+        if (this.attackCounter <= 100) {
+            this.attackCounter += this.attackSpeed;
+            return;
+        }
         for (let index = 0; index < enemies.length; index++) {
             const enemy = enemies[index];
             if (
@@ -202,11 +264,13 @@ export class Tower extends Item {
                     this.attackRange
                 )
             ) {
-                enemy.doDamage(this.damage);
+                enemy.shootAt(this.damage, this.position);
                 // console.log('enemy hp:', enemy.hp);
+                this.attackCounter = 0;
                 return;
             }
         }
+        this.attackCounter = 0;
     }
 }
 
@@ -219,11 +283,7 @@ export class Canvas {
     public emptyColor = 'white';
     private items: IDrawable[] = [];
 
-    constructor(
-        private canvas: HTMLCanvasElement,
-        private size: ISize,
-        private blockSize = defaultBlockSize
-    ) {}
+    constructor(private canvas: HTMLCanvasElement, private size: ISize) {}
 
     private get ctx(): CanvasRenderingContext2D {
         return this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -235,7 +295,7 @@ export class Canvas {
 
     public update(): void {
         this.ctx.fillStyle = this.emptyColor;
-        this.ctx.fillRect(0, 0, this.size.width, this.size.height);
+        this.ctx.clearRect(0, 0, this.size.width, this.size.height);
         for (let index = 0; index < this.items.length; index++) {
             const item = this.items[index];
             item.draw(this.ctx);
@@ -293,6 +353,7 @@ export class Path implements IDrawable {
     }
 
     public draw(ctx: CanvasRenderingContext2D): void {
+        ctx.save();
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.setLineDash([5, 15]);
@@ -306,6 +367,7 @@ export class Path implements IDrawable {
             }
         }
         ctx.stroke();
+        ctx.restore();
         this.drawStartEnd(ctx);
     }
 
