@@ -97,10 +97,14 @@ export class Item implements IDrawable {
 export class Enemy extends Item {
     private progress = 0;
     private _dead = false;
-    private healthPoints = 100;
+    private _healthPoints = 100;
 
     get dead(): boolean {
         return this._dead;
+    }
+
+    get hp(): number {
+        return this._healthPoints;
     }
 
     constructor(
@@ -113,8 +117,8 @@ export class Enemy extends Item {
     }
 
     public doDamage(dmg: number): void {
-        this.healthPoints -= dmg;
-        if (this.healthPoints <= 0) {
+        this._healthPoints -= dmg;
+        if (this._healthPoints <= 0) {
             this._dead = true;
         }
     }
@@ -149,8 +153,18 @@ export class Enemy extends Item {
     }
 }
 
+function getRandomArbitrary(min: number, max: number): number {
+    return Math.random() * (max - min) + min;
+}
+
 export class Tower extends Item {
-    private damage = 1;
+    private damageStart = 0.5;
+    private damageEnd = 1.5;
+    private attackRange = 100;
+
+    private get damage(): number {
+        return getRandomArbitrary(this.damageStart, this.damageEnd);
+    }
 
     constructor(
         position: IPoint,
@@ -166,13 +180,31 @@ export class Tower extends Item {
         ctx.arc(this.leftTopX, this.leftTopY, this.width, 0, 360);
         ctx.fill();
         ctx.closePath();
+        this.drawAttackRange(ctx);
+    }
+
+    private drawAttackRange(ctx: CanvasRenderingContext2D): void {
+        ctx.beginPath();
+        ctx.fillStyle = 'gray';
+        ctx.arc(this.leftTopX, this.leftTopY, this.attackRange, 0, 360);
+        ctx.stroke();
+        ctx.closePath();
     }
 
     public attack(enemies: Enemy[]): void {
         for (let index = 0; index < enemies.length; index++) {
             const enemy = enemies[index];
-            if (PointHelper.pointInsideCircle(enemy, this.position, 100)) {
+            if (
+                !enemy.dead &&
+                PointHelper.pointInsideCircle(
+                    enemy,
+                    this.position,
+                    this.attackRange
+                )
+            ) {
                 enemy.doDamage(this.damage);
+                // console.log('enemy hp:', enemy.hp);
+                return;
             }
         }
     }

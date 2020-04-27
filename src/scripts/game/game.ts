@@ -36,9 +36,9 @@ export class TowerDefenseGame {
             x: ev.offsetX,
             y: ev.offsetY,
         };
-        if (this.tower.pointInside(coords)) {
-            this.dragTower = true;
-        }
+        // if (this.tower.pointInside(coords)) {
+        //     this.dragTower = true;
+        // }
     }
 
     private handleMousemove(ev: MouseEvent): void {
@@ -47,7 +47,7 @@ export class TowerDefenseGame {
             y: ev.offsetY,
         };
         if (this.dragTower) {
-            this.tower.moveTo(coords);
+            // this.tower.moveTo(coords);
             this.canvas.update();
         }
     }
@@ -56,10 +56,16 @@ export class TowerDefenseGame {
         this.dragTower = false;
     }
 
-    private tower: Tower = new Tower({
-        x: 50,
-        y: 50,
-    });
+    private towers: Tower[] = [
+        new Tower({
+            x: 50,
+            y: 50,
+        }),
+        new Tower({
+            x: 50,
+            y: 250,
+        }),
+    ];
     private path: Path = defaultPath;
 
     private enemies: Enemy[] = [];
@@ -86,7 +92,7 @@ export class TowerDefenseGame {
 
     public start(): void {
         console.log('game started');
-        this.canvas.add(this.tower, this.path);
+        this.canvas.add(...this.towers, this.path);
         this.intervalId = setInterval(() => {
             if (this.progress >= 100) {
                 this.stop();
@@ -94,27 +100,32 @@ export class TowerDefenseGame {
                 this.run();
             }
         }, 1000 / this.fps);
-        this.startEnemiesSpawn();
+        this.startEnemiesSpawn(1).then(() => this.startEnemiesSpawn(2));
     }
 
-    private startEnemiesSpawn(): void {
-        let enemiesNumber = 0;
+    private async startEnemiesSpawn(level: number): Promise<boolean> {
+        console.log('level: ', level);
+        let enemiesCounter = 1;
+        const enemiesNumber = level === 1 ? 2 : 20;
+        const spawnSpeed = level === 1 ? 1000 : 500;
         const spawnEnemy = () => {
             const newEnemy = new Enemy(this.path);
             this.enemies.push(newEnemy);
             this.canvas.add(newEnemy);
-            enemiesNumber++;
         };
         spawnEnemy();
-        const enemySpawnInterval = setInterval(() => {
-            if (enemiesNumber > 10) {
-                if (enemySpawnInterval) {
-                    clearInterval(enemySpawnInterval);
+        return new Promise((resolve, reject) => {
+            const enemySpawnInterval = setInterval(() => {
+                if (enemiesCounter >= enemiesNumber) {
+                    if (enemySpawnInterval) {
+                        clearInterval(enemySpawnInterval);
+                    }
+                    resolve(true);
                 }
-                return;
-            }
-            spawnEnemy();
-        }, 3000);
+                spawnEnemy();
+                enemiesCounter++;
+            }, spawnSpeed);
+        });
     }
 
     private run(): void {
@@ -130,7 +141,7 @@ export class TowerDefenseGame {
                 }
             }
         });
-        this.tower.attack(this.enemies);
+        this.towers.forEach((x) => x.attack(this.enemies));
         this.canvas.update();
     }
 
