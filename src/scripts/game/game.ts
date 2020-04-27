@@ -108,8 +108,9 @@ export class TowerDefenseGame {
         let enemiesCounter = 1;
         const enemiesNumber = level === 1 ? 2 : 20;
         const spawnSpeed = level === 1 ? 1000 : 500;
+        const moveSpeed = level === 1 ? 0.3 : 0.1;
         const spawnEnemy = () => {
-            const newEnemy = new Enemy(this.path);
+            const newEnemy = new Enemy(this.path, moveSpeed);
             this.enemies.push(newEnemy);
             this.canvas.add(newEnemy);
         };
@@ -121,6 +122,7 @@ export class TowerDefenseGame {
                         clearInterval(enemySpawnInterval);
                     }
                     resolve(true);
+                    return;
                 }
                 spawnEnemy();
                 enemiesCounter++;

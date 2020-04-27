@@ -109,9 +109,9 @@ export class Enemy extends Item {
 
     constructor(
         private path: Path,
+        private moveSpeed = 0.3,
         blockSize = defaultBlockSize,
-        color = 'red',
-        private moveSpeed = 0.3
+        color = 'red'
     ) {
         super(path.points[0], blockSize, color);
     }
