@@ -54,13 +54,7 @@ export class TowerDefenseGame {
     });
     private path: Path = defaultPath;
 
-    private enemy: Enemy = new Enemy(
-        {
-            x: 10,
-            y: 10,
-        },
-        this.path
-    );
+    private enemies: Enemy[] = [];
 
     private canvas: Canvas;
     private intervalId?: NodeJS.Timeout;
@@ -83,7 +77,7 @@ export class TowerDefenseGame {
 
     public start(): void {
         console.log('game started');
-        this.canvas.add(this.enemy, this.tower);
+        this.canvas.add(this.tower);
         this.intervalId = setInterval(() => {
             if (this.progress >= 100) {
                 this.stop();
@@ -91,10 +85,30 @@ export class TowerDefenseGame {
                 this.run();
             }
         }, 1000 / this.fps);
+        this.startEnemiesSpawn();
+    }
+
+    private startEnemiesSpawn(): void {
+        let enemiesNumber = 0;
+        const enemySpawnInterval = setInterval(() => {
+            if (enemiesNumber > 10) {
+                clearInterval(enemySpawnInterval);
+            }
+            const newEnemy = new Enemy(
+                {
+                    x: 10,
+                    y: 10,
+                },
+                this.path
+            );
+            this.enemies.push(newEnemy);
+            this.canvas.add(newEnemy);
+            enemiesNumber++;
+        }, 3000);
     }
 
     private run(): void {
-        this.enemy.moveForward();
+        this.enemies.forEach((x) => x.moveForward());
         this.canvas.update();
     }
 

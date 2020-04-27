@@ -66,7 +66,7 @@ export class Enemy extends Item {
         private path: Path,
         blockSize = defaultBlockSize,
         color = 'red',
-        private moveSpeed = 10
+        private moveSpeed = 0.1
     ) {
         super(position, blockSize, color);
     }
@@ -82,7 +82,14 @@ export class Enemy extends Item {
             return;
         }
         this.moveTo(nextPoint);
-        this.progress++;
+        if (this.progress >= 100) {
+            return;
+        }
+        if (this.progress + this.moveSpeed > 100) {
+            this.progress = 100;
+            return;
+        }
+        this.progress += this.moveSpeed;
     }
 }
 export class Tower extends Item {
@@ -186,7 +193,7 @@ export class Path {
         const step = (this.length / 100) * percent;
         const sections = [...this.percentPathMap.keys()];
         const sectionKey = sections.find(
-            ({ start, end }) => step >= start && step < end
+            ({ start, end }) => step >= start && step <= end
         );
         const section = this.percentPathMap.get(sectionKey);
         if (!section) {
