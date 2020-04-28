@@ -32,41 +32,14 @@ const defaultPath: Path = new Path([
     },
 ]);
 
+export interface ILevelSettings {
+    enemiesNumber: number;
+    enemiesMoveSpeed: number;
+    enemiesColor: string;
+    spawnSpeed: number;
+}
+
 export class TowerDefenseGame {
-    private dragTower = false;
-
-    private handleMousedown(ev: MouseEvent): void {
-        const coords: IPoint = {
-            x: ev.offsetX,
-            y: ev.offsetY,
-        };
-        // if (this.tower.pointInside(coords)) {
-        //     this.dragTower = true;
-        // }
-    }
-
-    private handleMousemove(ev: MouseEvent): void {
-        const coords: IPoint = {
-            x: ev.offsetX,
-            y: ev.offsetY,
-        };
-        if (this.dragTower) {
-            // this.tower.moveTo(coords);
-            this.canvas.update();
-        }
-    }
-
-    private handleMouseup(ev: MouseEvent): void {
-        this.dragTower = false;
-    }
-
-    private handleMouseClicks(ev: MouseEvent): void {
-        this.canvas.handleOnClick({
-            x: ev.offsetX,
-            y: ev.offsetY,
-        });
-    }
-
     private towers: Tower[] = [
         new Tower({
             x: 50,
@@ -77,49 +50,58 @@ export class TowerDefenseGame {
             y: 250,
         }),
     ];
+
     private path: Path = defaultPath;
-
     private enemies: Enemy[] = [];
-
     private canvas: Canvas;
     private intervalId?: NodeJS.Timeout;
     private fps = 60;
     private progress = 0;
     private lifes = 7;
     private canvasSize = { width: 600, height: 400 };
+    private levels: Map<number, ILevelSettings> = new Map();
+    private try = 0;
+    private gameIsRunning = false;
 
     constructor(
         private htmlCanvas: HTMLCanvasElement,
         private blockSize = defaultBlockSize
     ) {
-        htmlCanvas.addEventListener('mousedown', (ev) =>
-            this.handleMousedown(ev)
-        );
-        htmlCanvas.addEventListener('mousemove', (ev) =>
-            this.handleMousemove(ev)
-        );
-        htmlCanvas.addEventListener('mouseup', (ev) => this.handleMouseup(ev));
-        htmlCanvas.addEventListener('startgame', this.start);
-        htmlCanvas.addEventListener('click', (ev) =>
-            this.handleMouseClicks(ev)
-        );
         this.canvas = new Canvas(htmlCanvas, this.canvasSize);
+        this.levels.set(1, {
+            enemiesColor: 'blue',
+            enemiesMoveSpeed: 1,
+            enemiesNumber: 3,
+            spawnSpeed: 500,
+        });
+        this.levels.set(2, {
+            enemiesColor: 'red',
+            enemiesMoveSpeed: 0.1,
+            enemiesNumber: 20,
+            spawnSpeed: 500,
+        });
     }
 
     public initialize(): void {
-        // this.start();
+        this.progress = 0;
+        this.lifes = 7;
+        this.canvas = new Canvas(this.htmlCanvas, this.canvasSize);
+        this.enemies = [];
+        this.try++;
         this.showMainMenu();
     }
 
     private showMainMenu() {
-        this.canvas.add(
-            new MainMenu(this.canvasSize, () => console.log('start click'))
-        );
+        const mainMenu = new MainMenu(this.canvasSize, `Start`, () => {
+            this.canvas.remove(mainMenu);
+            this.canvas.update();
+            this.start();
+        });
+        this.canvas.add(mainMenu);
         this.canvas.update();
     }
 
     private start(): void {
-        console.log('game started');
         this.canvas.add(...this.towers, this.path);
         this.intervalId = setInterval(() => {
             if (this.progress >= 100) {
@@ -128,24 +110,57 @@ export class TowerDefenseGame {
                 this.run();
             }
         }, 1000 / this.fps);
-        this.startEnemiesSpawn(1).then(() => this.startEnemiesSpawn(2));
+        this.gameIsRunning = true;
+        this.startLevel(1);
+    }
+
+    private async startLevel(level) {
+        if (this.gameIsRunning) {
+            const result = await this.startEnemiesSpawn(level);
+            if (result && this.gameIsRunning) {
+                if (level < this.levels.size) {
+                    const nextLevelButton = new MainMenu(
+                        this.canvasSize,
+                        `Start level: ${++level}`,
+                        () => {
+                            this.canvas.remove(nextLevelButton);
+                            this.startLevel(level);
+                        }
+                    );
+                    this.canvas.add(nextLevelButton);
+                } else {
+                    const playAgainMenu = new MainMenu(
+                        this.canvasSize,
+                        'You won!',
+                        () => {
+                            this.canvas.remove(playAgainMenu);
+                            this.initialize();
+                        }
+                    );
+                    this.canvas.add(playAgainMenu);
+                }
+            }
+        }
     }
 
     private async startEnemiesSpawn(level: number): Promise<boolean> {
         console.log('level: ', level);
         let enemiesCounter = 1;
-        const enemiesNumber = level === 1 ? 3 : 20;
-        const spawnSpeed = level === 1 ? 1000 : 500;
-        const moveSpeed = level === 1 ? 0.2 : 0.1;
+        const levelConfigs = this.levels.get(level);
         const spawnEnemy = () => {
-            const newEnemy = new Enemy(this.path, moveSpeed);
+            const newEnemy = new Enemy(
+                this.path,
+                levelConfigs.enemiesMoveSpeed,
+                undefined,
+                levelConfigs.enemiesColor
+            );
             this.enemies.push(newEnemy);
             this.canvas.add(newEnemy);
         };
         spawnEnemy();
         return new Promise((resolve, reject) => {
             const enemySpawnInterval = setInterval(() => {
-                if (enemiesCounter >= enemiesNumber) {
+                if (enemiesCounter >= levelConfigs.enemiesNumber) {
                     if (enemySpawnInterval) {
                         clearInterval(enemySpawnInterval);
                     }
@@ -154,7 +169,13 @@ export class TowerDefenseGame {
                 }
                 spawnEnemy();
                 enemiesCounter++;
-            }, spawnSpeed);
+                if (!this.gameIsRunning) {
+                    if (enemySpawnInterval) {
+                        clearInterval(enemySpawnInterval);
+                    }
+                    resolve(false);
+                }
+            }, levelConfigs.spawnSpeed);
         });
     }
 
@@ -167,7 +188,15 @@ export class TowerDefenseGame {
                 console.log('lifes: ', this.lifes);
                 if (this.lifes <= 0) {
                     this.stop();
-                    console.log('game over');
+                    const gameOverMenu = new MainMenu(
+                        this.canvasSize,
+                        'Game over',
+                        () => {
+                            this.canvas.remove(gameOverMenu);
+                            this.initialize();
+                        }
+                    );
+                    this.canvas.add(gameOverMenu);
                 }
             }
         });
@@ -179,6 +208,7 @@ export class TowerDefenseGame {
         if (this.intervalId) {
             clearInterval(this.intervalId);
         }
+        this.gameIsRunning = false;
     }
 }
 
@@ -186,12 +216,15 @@ export class MainMenu implements IDrawable, IClickable {
     private path: Path2D;
     constructor(
         private canvasSize: ISize,
-        private onClickHandler: () => void
+        public text: string,
+        public onClick?: () => void
     ) {}
 
-    onClick(ctx: CanvasRenderingContext2D, point: IPoint): void {
+    onClickHandler(ctx: CanvasRenderingContext2D, point: IPoint): void {
         if (ctx.isPointInPath(this.path, point.x, point.y)) {
-            this.onClickHandler();
+            if (this.onClick) {
+                this.onClick();
+            }
         }
     }
 
@@ -219,10 +252,9 @@ export class MainMenu implements IDrawable, IClickable {
         ctx.textBaseline = 'middle';
         ctx.fillStyle = 'black';
         ctx.fillText(
-            'Start',
+            this.text,
             leftTopX + buttonWidth / 2,
             leftTopY + buttonHeight / 2
         );
-        // ctx.isPointInPath();
     }
 }

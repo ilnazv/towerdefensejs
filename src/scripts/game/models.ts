@@ -37,7 +37,7 @@ export interface IDrawable {
 }
 
 export interface IClickable {
-    onClick(ctx: CanvasRenderingContext2D, point: IPoint): void;
+    onClickHandler(ctx: CanvasRenderingContext2D, point: IPoint): void;
 }
 
 export function getRandomArbitrary(min: number, max: number): number {
