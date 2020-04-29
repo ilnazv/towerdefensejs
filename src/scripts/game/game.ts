@@ -1,9 +1,10 @@
 import { IPoint, IDrawable, ISize, IClickable } from './models';
 import { defaultBlockSize } from './constants';
 import { Path } from './path';
-import { Tower } from './towers';
+import { SpearTowerBase, ITower, TowerFactory, TowerType } from './towers';
 import { Enemy } from './enemy';
 import { Canvas } from './canvas';
+import { CommandBar } from './menu';
 
 const defaultPath: Path = new Path([
     {
@@ -40,15 +41,23 @@ export interface ILevelSettings {
 }
 
 export class TowerDefenseGame {
-    private towers: Tower[] = [
-        new Tower({
-            x: 50,
-            y: 50,
-        }),
-        new Tower({
-            x: 100,
-            y: 250,
-        }),
+    private towers: ITower[] = [
+        TowerFactory.createTower(
+            {
+                x: 50,
+                y: 50,
+            },
+            TowerType.SpearTower,
+            1
+        ),
+        TowerFactory.createTower(
+            {
+                x: 100,
+                y: 250,
+            },
+            TowerType.SpearTower,
+            1
+        ),
     ];
 
     private path: Path = defaultPath;
@@ -82,27 +91,44 @@ export class TowerDefenseGame {
         });
     }
 
+    public testMode(): void {
+        const commandBar = new CommandBar(this.canvasSize);
+        this.canvas.add(commandBar);
+        this.canvas.update();
+    }
+
     public initialize(): void {
         this.progress = 0;
         this.lifes = 7;
         this.canvas = new Canvas(this.htmlCanvas, this.canvasSize);
         this.enemies = [];
         this.try++;
+        this.canvas.add(...this.towers, this.path);
         this.showMainMenu();
     }
 
+    private bottomRightButton = {
+        buttonHeight: 50,
+        buttonWidth: 100,
+        leftTopX: this.canvasSize.width - 100,
+        leftTopY: this.canvasSize.height - 50,
+    };
+
     private showMainMenu() {
-        const mainMenu = new MainMenu(this.canvasSize, `Start`, () => {
-            this.canvas.remove(mainMenu);
-            this.canvas.update();
-            this.start();
-        });
-        this.canvas.add(mainMenu);
+        const startButton = new Button(
+            `Start`,
+            () => {
+                this.canvas.remove(startButton);
+                this.canvas.update();
+                this.start();
+            },
+            this.bottomRightButton
+        );
+        this.canvas.add(startButton);
         this.canvas.update();
     }
 
     private start(): void {
-        this.canvas.add(...this.towers, this.path);
         this.intervalId = setInterval(() => {
             if (this.progress >= 100) {
                 this.stop();
@@ -119,23 +145,27 @@ export class TowerDefenseGame {
             const result = await this.startEnemiesSpawn(level);
             if (result && this.gameIsRunning) {
                 if (level < this.levels.size) {
-                    const nextLevelButton = new MainMenu(
-                        this.canvasSize,
+                    const nextLevelButton = new Button(
                         `Start level: ${++level}`,
                         () => {
                             this.canvas.remove(nextLevelButton);
                             this.startLevel(level);
+                        },
+                        {
+                            ...this.bottomRightButton,
+                            buttonWidth: 150,
+                            leftTopX: this.canvasSize.width - 150,
                         }
                     );
                     this.canvas.add(nextLevelButton);
                 } else {
-                    const playAgainMenu = new MainMenu(
-                        this.canvasSize,
+                    const playAgainMenu = new Button(
                         'You won!',
                         () => {
                             this.canvas.remove(playAgainMenu);
                             this.initialize();
-                        }
+                        },
+                        this.bottomRightButton
                     );
                     this.canvas.add(playAgainMenu);
                 }
@@ -188,13 +218,13 @@ export class TowerDefenseGame {
                 console.log('lifes: ', this.lifes);
                 if (this.lifes <= 0) {
                     this.stop();
-                    const gameOverMenu = new MainMenu(
-                        this.canvasSize,
+                    const gameOverMenu = new Button(
                         'Game over',
                         () => {
                             this.canvas.remove(gameOverMenu);
                             this.initialize();
-                        }
+                        },
+                        this.bottomRightButton
                     );
                     this.canvas.add(gameOverMenu);
                 }
@@ -212,16 +242,30 @@ export class TowerDefenseGame {
     }
 }
 
-export class MainMenu implements IDrawable, IClickable {
+export class Button implements IDrawable, IClickable {
     private path: Path2D;
     constructor(
-        private canvasSize: ISize,
         public text: string,
-        public onClick?: () => void
+        public onClick: () => void,
+        private params: {
+            leftTopX: number;
+            leftTopY: number;
+            buttonWidth: number;
+            buttonHeight: number;
+        } = {
+            buttonHeight: 50,
+            buttonWidth: 100,
+            leftTopX: 1,
+            leftTopY: 2,
+        }
     ) {}
 
+    pointInPath(ctx: CanvasRenderingContext2D, point: IPoint): boolean {
+        return ctx.isPointInPath(this.path, point.x, point.y);
+    }
+
     onClickHandler(ctx: CanvasRenderingContext2D, point: IPoint): void {
-        if (ctx.isPointInPath(this.path, point.x, point.y)) {
+        if (this.pointInPath(ctx, point)) {
             if (this.onClick) {
                 this.onClick();
             }
@@ -229,23 +273,24 @@ export class MainMenu implements IDrawable, IClickable {
     }
 
     draw(ctx: CanvasRenderingContext2D, color = '#A9B665'): void {
-        const buttonWidth = 100;
-        const buttonHeight = 50;
-        const leftTopX = this.canvasSize.width / 2 - buttonWidth / 2;
-        const leftTopY = this.canvasSize.height / 2 - buttonHeight / 2;
         const radgrad = ctx.createRadialGradient(
-            leftTopX + 45,
-            leftTopY + 45,
+            this.params.leftTopX + 45,
+            this.params.leftTopY + 45,
             10,
-            leftTopX + 52,
-            leftTopY + 50,
+            this.params.leftTopX + 52,
+            this.params.leftTopY + 50,
             100
         );
         radgrad.addColorStop(0, '#A7D30C');
         radgrad.addColorStop(1, '#019F62');
         ctx.fillStyle = radgrad;
         this.path = new Path2D();
-        this.path.rect(leftTopX, leftTopY, buttonWidth, buttonHeight);
+        this.path.rect(
+            this.params.leftTopX,
+            this.params.leftTopY,
+            this.params.buttonWidth,
+            this.params.buttonHeight
+        );
         ctx.fill(this.path);
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
@@ -253,8 +298,8 @@ export class MainMenu implements IDrawable, IClickable {
         ctx.fillStyle = 'black';
         ctx.fillText(
             this.text,
-            leftTopX + buttonWidth / 2,
-            leftTopY + buttonHeight / 2
+            this.params.leftTopX + this.params.buttonWidth / 2,
+            this.params.leftTopY + this.params.buttonHeight / 2
         );
     }
 }

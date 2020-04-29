@@ -1,4 +1,10 @@
-import { IPoint, PointHelper, IDrawable, getRandomArbitrary } from './models';
+import {
+    IPoint,
+    PointHelper,
+    IDrawable,
+    getRandomArbitrary,
+    IClickable,
+} from './models';
 import { defaultBlockSize } from './constants';
 import { Enemy } from './enemy';
 
@@ -48,31 +54,101 @@ export class Item implements IDrawable {
         throw new Error('not implemented');
     }
 }
-export class Tower extends Item {
-    private damageStart = 45;
-    private damageEnd = 65;
-    private attackRange = 100;
-    private attackSpeed = 5;
+
+export interface ITower extends IDrawable, IClickable {
+    attack(enemies: Enemy[]): void;
+}
+
+export interface ITowerParams {
+    damageStart: number;
+    damageEnd: number;
+    attackRange: number;
+    attackSpeed: number;
+}
+
+export enum TowerType {
+    SpearTower = 'SpearTower',
+    SplashTower = 'SplashTower',
+}
+
+export const getTowerParams = (
+    type: TowerType,
+    level: number
+): ITowerParams => {
+    switch (type) {
+        case TowerType.SpearTower:
+            return {
+                damageStart: 45,
+                damageEnd: 65,
+                attackRange: 100,
+                attackSpeed: 5,
+            };
+        case TowerType.SplashTower:
+            return {
+                damageStart: 20,
+                damageEnd: 40,
+                attackRange: 50,
+                attackSpeed: 2,
+            };
+    }
+};
+
+export class TowerFactory {
+    static createTower(
+        position: IPoint,
+        type: TowerType,
+        level: number
+    ): ITower {
+        switch (type) {
+            case TowerType.SpearTower:
+                const towerParams = getTowerParams(type, level);
+                return new SpearTowerBase(position, towerParams);
+            default:
+                break;
+        }
+    }
+}
+
+export class SpearTowerBase extends Item implements ITower {
+    public damageStart = 45;
+    public damageEnd = 65;
+    public attackRange = 100;
+    public attackSpeed = 5;
     private attackCounter = 100;
 
     private get damage(): number {
         return getRandomArbitrary(this.damageStart, this.damageEnd);
     }
 
+    private path: Path2D;
+
     constructor(
         position: IPoint,
+        params: ITowerParams,
         blockSize = defaultBlockSize,
         color = 'blue'
     ) {
         super(position, blockSize, color);
+        const { attackRange, attackSpeed, damageEnd, damageStart } = params;
+        this.damageStart = damageStart;
+        this.damageEnd = damageEnd;
+        this.attackRange = attackRange;
+        this.attackSpeed = attackSpeed;
+    }
+    onClickHandler(ctx: CanvasRenderingContext2D, point: IPoint): void {
+        return;
+    }
+    pointInPath(ctx: CanvasRenderingContext2D, point: IPoint): boolean {
+        return ctx.isPointInPath(this.path, point.x, point.y);
     }
 
     public draw(ctx: CanvasRenderingContext2D, color = this.color): void {
         ctx.save();
         ctx.beginPath();
         ctx.fillStyle = color;
-        ctx.arc(this.leftTopX, this.leftTopY, this.width, 0, 360);
-        ctx.fill();
+        this.path = new Path2D();
+        this.path.arc(this.leftTopX, this.leftTopY, this.width, 0, 360);
+        ctx.fill(this.path);
         ctx.closePath();
         this.drawAttackRange(ctx);
         ctx.restore();

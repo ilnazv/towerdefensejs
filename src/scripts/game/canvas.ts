@@ -1,19 +1,22 @@
 import { IDrawable, ISize, IPoint, IClickable } from './models';
+import { ITower, Item } from './towers';
 
 export class Canvas {
     public emptyColor = 'white';
     private items: IDrawable[] = [];
 
-    private dragTower = false;
+    private dragItem: Item;
 
     private handleMousedown(ev: MouseEvent): void {
-        const coords: IPoint = {
+        const point: IPoint = {
             x: ev.offsetX,
             y: ev.offsetY,
         };
-        // if (this.tower.pointInside(coords)) {
-        //     this.dragTower = true;
-        // }
+        this.dragItem = this.items
+            .filter((x) => ((x as unknown) as ITower).pointInPath)
+            .find((x) =>
+                ((x as unknown) as ITower).pointInPath(this.ctx, point)
+            ) as Item;
     }
 
     private handleMousemove(ev: MouseEvent): void {
@@ -21,14 +24,14 @@ export class Canvas {
             x: ev.offsetX,
             y: ev.offsetY,
         };
-        if (this.dragTower) {
-            // this.tower.moveTo(coords);
+        if (this.dragItem) {
+            this.dragItem.moveTo(coords);
             this.update();
         }
     }
 
     private handleMouseup(ev: MouseEvent): void {
-        this.dragTower = false;
+        this.dragItem = undefined;
     }
 
     private handleMouseClicks(ev: MouseEvent): void {

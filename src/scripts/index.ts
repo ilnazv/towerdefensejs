@@ -9,3 +9,4 @@ const gameCanvas: HTMLCanvasElement = document.getElementById(
 
 const tdGame = new TowerDefenseGame(gameCanvas);
 tdGame.initialize();
+// tdGame.testMode();
