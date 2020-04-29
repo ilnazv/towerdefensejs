@@ -1,16 +1,18 @@
 import { IDrawable, IClickable, IPoint } from '../../Models';
 
+export interface IButtonParams {
+    leftTopX: number;
+    leftTopY: number;
+    buttonWidth: number;
+    buttonHeight: number;
+}
+
 export class Button implements IDrawable, IClickable {
     private path: Path2D;
     constructor(
         public text: string,
         public onClick: () => void,
-        private params: {
-            leftTopX: number;
-            leftTopY: number;
-            buttonWidth: number;
-            buttonHeight: number;
-        } = {
+        private params: IButtonParams = {
             buttonHeight: 50,
             buttonWidth: 100,
             leftTopX: 1,

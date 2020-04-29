@@ -3,42 +3,75 @@ import { ITower, TowerType } from './Components/Towers/Models';
 import { TowerFactory } from './Components/Towers/Towers';
 import { Canvas } from './Components/Canvas';
 import { CommandBar } from './Components/CommandBar';
-import { Button } from './Components/BasicElements/Button';
+import { Button, IButtonParams } from './Components/BasicElements/Button';
 import { Enemy } from './Components/Enemies/Enemy';
-import { IWaveSettings } from './Models';
-import { defaultPath } from './Constants';
+import { IWaveSettings, ISize } from './Models';
+
+const defaultPath: Path = new Path([
+    {
+        x: 10,
+        y: 10,
+    },
+    {
+        x: 10,
+        y: 300,
+    },
+    {
+        x: 200,
+        y: 300,
+    },
+    {
+        x: 300,
+        y: 10,
+    },
+    {
+        x: 500,
+        y: 10,
+    },
+    {
+        x: 500,
+        y: 300,
+    },
+]);
+
+const defaultTowers = [
+    TowerFactory.createTower(
+        {
+            x: 50,
+            y: 50,
+        },
+        TowerType.SpearTower,
+        1
+    ),
+    TowerFactory.createTower(
+        {
+            x: 100,
+            y: 250,
+        },
+        TowerType.SpearTower,
+        1
+    ),
+];
 
 export class TowerDefenseGame {
-    private towers: ITower[] = [
-        TowerFactory.createTower(
-            {
-                x: 50,
-                y: 50,
-            },
-            TowerType.SpearTower,
-            1
-        ),
-        TowerFactory.createTower(
-            {
-                x: 100,
-                y: 250,
-            },
-            TowerType.SpearTower,
-            1
-        ),
-    ];
-
+    private towers: ITower[] = defaultTowers;
     private path: Path = defaultPath;
     private enemies: Enemy[] = [];
     private canvas: Canvas;
     private intervalId?: NodeJS.Timeout;
     private fps = 60;
     private lifes = 7;
-    private canvasSize = { width: 600, height: 400 };
+    private canvasSize: ISize;
     private waves: Map<number, IWaveSettings> = new Map();
     private gameIsRunning = false;
 
+    private bottomRightButton: IButtonParams;
+
     constructor(private htmlCanvas: HTMLCanvasElement) {
+        this.canvasSize = {
+            height: this.htmlCanvas.height,
+            width: this.htmlCanvas.width,
+        };
         this.canvas = new Canvas(htmlCanvas, this.canvasSize);
         this.waves.set(1, {
             enemiesColor: 'blue',
@@ -52,6 +85,12 @@ export class TowerDefenseGame {
             enemiesNumber: 20,
             spawnSpeed: 500,
         });
+        this.bottomRightButton = {
+            buttonHeight: 50,
+            buttonWidth: 100,
+            leftTopX: this.canvasSize.width - 100,
+            leftTopY: this.canvasSize.height - 50,
+        };
     }
 
     public testMode(): void {
@@ -67,13 +106,6 @@ export class TowerDefenseGame {
         this.canvas.add(...this.towers, this.path);
         this.showMainMenu();
     }
-
-    private readonly bottomRightButton = {
-        buttonHeight: 50,
-        buttonWidth: 100,
-        leftTopX: this.canvasSize.width - 100,
-        leftTopY: this.canvasSize.height - 50,
-    };
 
     private showMainMenu(): void {
         const startButton = new Button(
