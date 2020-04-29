@@ -3,7 +3,8 @@ import { ITower, TowerType } from './Components/Towers/Models';
 import { TowerFactory } from './Components/Towers/Towers';
 import { Canvas } from './Components/Canvas';
 import { CommandBar } from './Components/CommandBar';
-import { Button, IButtonParams } from './Components/BasicElements/Button';
+import { Button } from './Components/BasicElements/Button';
+import { IButtonParams } from './Components/BasicElements/Button/Models';
 import { Enemy } from './Components/Enemies/Enemy';
 import { IWaveSettings, ISize } from './Models';
 
@@ -62,7 +63,26 @@ export class TowerDefenseGame {
     private fps = 60;
     private lifes = 7;
     private canvasSize: ISize;
-    private waves: Map<number, IWaveSettings> = new Map();
+    private waves: Map<number, IWaveSettings> = new Map([
+        [
+            1,
+            {
+                enemiesColor: 'blue',
+                enemiesMoveSpeed: 1,
+                enemiesNumber: 3,
+                spawnSpeed: 500,
+            },
+        ],
+        [
+            2,
+            {
+                enemiesColor: 'red',
+                enemiesMoveSpeed: 0.1,
+                enemiesNumber: 20,
+                spawnSpeed: 500,
+            },
+        ],
+    ]);
     private gameIsRunning = false;
 
     private bottomRightButton: IButtonParams;
@@ -73,18 +93,6 @@ export class TowerDefenseGame {
             width: this.htmlCanvas.width,
         };
         this.canvas = new Canvas(htmlCanvas, this.canvasSize);
-        this.waves.set(1, {
-            enemiesColor: 'blue',
-            enemiesMoveSpeed: 1,
-            enemiesNumber: 3,
-            spawnSpeed: 500,
-        });
-        this.waves.set(2, {
-            enemiesColor: 'red',
-            enemiesMoveSpeed: 0.1,
-            enemiesNumber: 20,
-            spawnSpeed: 500,
-        });
         this.bottomRightButton = {
             buttonHeight: 50,
             buttonWidth: 100,
