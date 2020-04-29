@@ -1,4 +1,4 @@
-import '../styles/index.scss';
+import './styles/index.scss';
 import { TowerDefenseGame } from './game/game';
 
 const canvasId = 'gameCanvas';

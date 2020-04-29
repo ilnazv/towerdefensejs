@@ -1,5 +1,5 @@
-import { IDrawable, IPoint } from './models';
-import { Enemy } from './enemy';
+import { IDrawable, IPoint } from '../Models';
+import { Enemy } from './Enemies/Enemy';
 
 export class Projectile implements IDrawable {
     private progress = 0;

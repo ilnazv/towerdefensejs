@@ -1,44 +1,12 @@
-import { IPoint, IDrawable, ISize, IClickable } from './models';
-import { defaultBlockSize } from './constants';
-import { Path } from './path';
-import { SpearTowerBase, ITower, TowerFactory, TowerType } from './towers';
-import { Enemy } from './enemy';
-import { Canvas } from './canvas';
-import { CommandBar } from './menu';
-
-const defaultPath: Path = new Path([
-    {
-        x: 10,
-        y: 10,
-    },
-    {
-        x: 10,
-        y: 300,
-    },
-    {
-        x: 200,
-        y: 300,
-    },
-    {
-        x: 300,
-        y: 10,
-    },
-    {
-        x: 500,
-        y: 10,
-    },
-    {
-        x: 500,
-        y: 300,
-    },
-]);
-
-export interface ILevelSettings {
-    enemiesNumber: number;
-    enemiesMoveSpeed: number;
-    enemiesColor: string;
-    spawnSpeed: number;
-}
+import { Path } from './Components/Path';
+import { ITower, TowerType } from './Components/Towers/Models';
+import { TowerFactory } from './Components/Towers/Towers';
+import { Canvas } from './Components/Canvas';
+import { CommandBar } from './Components/CommandBar';
+import { Button } from './Components/BasicElements/Button';
+import { Enemy } from './Components/Enemies/Enemy';
+import { IWaveSettings } from './Models';
+import { defaultPath } from './Constants';
 
 export class TowerDefenseGame {
     private towers: ITower[] = [
@@ -65,25 +33,20 @@ export class TowerDefenseGame {
     private canvas: Canvas;
     private intervalId?: NodeJS.Timeout;
     private fps = 60;
-    private progress = 0;
     private lifes = 7;
     private canvasSize = { width: 600, height: 400 };
-    private levels: Map<number, ILevelSettings> = new Map();
-    private try = 0;
+    private waves: Map<number, IWaveSettings> = new Map();
     private gameIsRunning = false;
 
-    constructor(
-        private htmlCanvas: HTMLCanvasElement,
-        private blockSize = defaultBlockSize
-    ) {
+    constructor(private htmlCanvas: HTMLCanvasElement) {
         this.canvas = new Canvas(htmlCanvas, this.canvasSize);
-        this.levels.set(1, {
+        this.waves.set(1, {
             enemiesColor: 'blue',
             enemiesMoveSpeed: 1,
             enemiesNumber: 3,
             spawnSpeed: 500,
         });
-        this.levels.set(2, {
+        this.waves.set(2, {
             enemiesColor: 'red',
             enemiesMoveSpeed: 0.1,
             enemiesNumber: 20,
@@ -98,23 +61,21 @@ export class TowerDefenseGame {
     }
 
     public initialize(): void {
-        this.progress = 0;
         this.lifes = 7;
         this.canvas = new Canvas(this.htmlCanvas, this.canvasSize);
         this.enemies = [];
-        this.try++;
         this.canvas.add(...this.towers, this.path);
         this.showMainMenu();
     }
 
-    private bottomRightButton = {
+    private readonly bottomRightButton = {
         buttonHeight: 50,
         buttonWidth: 100,
         leftTopX: this.canvasSize.width - 100,
         leftTopY: this.canvasSize.height - 50,
     };
 
-    private showMainMenu() {
+    private showMainMenu(): void {
         const startButton = new Button(
             `Start`,
             () => {
@@ -130,21 +91,17 @@ export class TowerDefenseGame {
 
     private start(): void {
         this.intervalId = setInterval(() => {
-            if (this.progress >= 100) {
-                this.stop();
-            } else {
-                this.run();
-            }
+            this.run();
         }, 1000 / this.fps);
         this.gameIsRunning = true;
         this.startLevel(1);
     }
 
-    private async startLevel(level) {
+    private async startLevel(level: number): Promise<void> {
         if (this.gameIsRunning) {
             const result = await this.startEnemiesSpawn(level);
             if (result && this.gameIsRunning) {
-                if (level < this.levels.size) {
+                if (level < this.waves.size) {
                     const nextLevelButton = new Button(
                         `Start level: ${++level}`,
                         () => {
@@ -176,7 +133,7 @@ export class TowerDefenseGame {
     private async startEnemiesSpawn(level: number): Promise<boolean> {
         console.log('level: ', level);
         let enemiesCounter = 1;
-        const levelConfigs = this.levels.get(level);
+        const levelConfigs = this.waves.get(level);
         const spawnEnemy = () => {
             const newEnemy = new Enemy(
                 this.path,
@@ -234,72 +191,10 @@ export class TowerDefenseGame {
         this.canvas.update();
     }
 
-    public stop(): void {
+    private stop(): void {
         if (this.intervalId) {
             clearInterval(this.intervalId);
         }
         this.gameIsRunning = false;
-    }
-}
-
-export class Button implements IDrawable, IClickable {
-    private path: Path2D;
-    constructor(
-        public text: string,
-        public onClick: () => void,
-        private params: {
-            leftTopX: number;
-            leftTopY: number;
-            buttonWidth: number;
-            buttonHeight: number;
-        } = {
-            buttonHeight: 50,
-            buttonWidth: 100,
-            leftTopX: 1,
-            leftTopY: 2,
-        }
-    ) {}
-
-    pointInPath(ctx: CanvasRenderingContext2D, point: IPoint): boolean {
-        return ctx.isPointInPath(this.path, point.x, point.y);
-    }
-
-    onClickHandler(ctx: CanvasRenderingContext2D, point: IPoint): void {
-        if (this.pointInPath(ctx, point)) {
-            if (this.onClick) {
-                this.onClick();
-            }
-        }
-    }
-
-    draw(ctx: CanvasRenderingContext2D, color = '#A9B665'): void {
-        const radgrad = ctx.createRadialGradient(
-            this.params.leftTopX + 45,
-            this.params.leftTopY + 45,
-            10,
-            this.params.leftTopX + 52,
-            this.params.leftTopY + 50,
-            100
-        );
-        radgrad.addColorStop(0, '#A7D30C');
-        radgrad.addColorStop(1, '#019F62');
-        ctx.fillStyle = radgrad;
-        this.path = new Path2D();
-        this.path.rect(
-            this.params.leftTopX,
-            this.params.leftTopY,
-            this.params.buttonWidth,
-            this.params.buttonHeight
-        );
-        ctx.fill(this.path);
-        ctx.font = '20px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = 'black';
-        ctx.fillText(
-            this.text,
-            this.params.leftTopX + this.params.buttonWidth / 2,
-            this.params.leftTopY + this.params.buttonHeight / 2
-        );
     }
 }

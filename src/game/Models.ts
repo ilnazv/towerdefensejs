@@ -49,3 +49,10 @@ export interface ISize {
     width: number;
     height: number;
 }
+
+export interface IWaveSettings {
+    enemiesNumber: number;
+    enemiesMoveSpeed: number;
+    enemiesColor: string;
+    spawnSpeed: number;
+}

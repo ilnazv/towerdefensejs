@@ -1,8 +1,8 @@
-import { IPoint } from './models';
-import { Projectile } from './projectile';
-import { defaultBlockSize } from './constants';
-import { Item } from './towers';
-import { Path } from './path';
+import { Item } from '../Towers/Towers';
+import { Projectile } from '../Projectile';
+import { Path } from '../Path';
+import { defaultBlockSize } from '../../Constants';
+import { IPoint } from '../../Models';
 
 export class Enemy extends Item {
     private progress = 0;

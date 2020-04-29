@@ -1,12 +1,12 @@
+import { TowerType, ITowerParams, ITower } from './Models';
 import {
-    IPoint,
-    PointHelper,
     IDrawable,
+    IPoint,
     getRandomArbitrary,
-    IClickable,
-} from './models';
-import { defaultBlockSize } from './constants';
-import { Enemy } from './enemy';
+    PointHelper,
+} from '../../Models';
+import { defaultBlockSize } from '../../Constants';
+import { Enemy } from '../Enemies/Enemy';
 
 export class Item implements IDrawable {
     constructor(
@@ -53,22 +53,6 @@ export class Item implements IDrawable {
     public draw(ctx: CanvasRenderingContext2D, color = this.color): void {
         throw new Error('not implemented');
     }
-}
-
-export interface ITower extends IDrawable, IClickable {
-    attack(enemies: Enemy[]): void;
-}
-
-export interface ITowerParams {
-    damageStart: number;
-    damageEnd: number;
-    attackRange: number;
-    attackSpeed: number;
-}
-
-export enum TowerType {
-    SpearTower = 'SpearTower',
-    SplashTower = 'SplashTower',
 }
 
 export const getTowerParams = (

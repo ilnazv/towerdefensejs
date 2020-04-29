@@ -1,5 +1,6 @@
-import { IDrawable, ISize, IPoint, IClickable } from './models';
-import { ITower, Item } from './towers';
+import { IDrawable, IPoint, ISize, IClickable } from '../Models';
+import { Item } from './Towers/Towers';
+import { ITower } from './Towers/Models';
 
 export class Canvas {
     public emptyColor = 'white';

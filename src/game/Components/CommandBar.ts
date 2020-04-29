@@ -1,4 +1,4 @@
-import { IDrawable, ISize } from './models';
+import { IDrawable, ISize } from '../Models';
 
 export class CommandBar implements IDrawable {
     private readonly barHeight = 100;

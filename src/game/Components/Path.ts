@@ -1,4 +1,4 @@
-import { IDrawable, IPoint } from './models';
+import { IDrawable, IPoint } from '../Models';
 
 export class Path implements IDrawable {
     private percentPathMap = new Map<{ start: number; end: number }, number>();
