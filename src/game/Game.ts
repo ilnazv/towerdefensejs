@@ -4,9 +4,9 @@ import { TowerFactory } from './Components/Towers/Towers';
 import { Canvas } from './Components/Canvas';
 import { CommandBar } from './Components/CommandBar';
 import { Button } from './Components/BasicElements/Button';
-import { IButtonParams } from './Components/BasicElements/Button/Models';
 import { Enemy } from './Components/Enemies/Enemy';
 import { IWaveSettings, ISize } from './Models';
+import { IButtonParams } from './Components/BasicElements/Models';
 
 const defaultPath: Path = new Path([
     {
