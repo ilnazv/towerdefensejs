@@ -43,13 +43,15 @@ export class Canvas {
     }
 
     constructor(private htmlCanvas: HTMLCanvasElement, private size: ISize) {
-        htmlCanvas.addEventListener('mousedown', (ev) =>
-            this.handleMousedown(ev)
+        htmlCanvas.addEventListener('mousedown touchstart', (ev) =>
+            this.handleMousedown(ev as MouseEvent)
         );
         htmlCanvas.addEventListener('mousemove', (ev) =>
             this.handleMousemove(ev)
         );
-        htmlCanvas.addEventListener('mouseup', (ev) => this.handleMouseup(ev));
+        htmlCanvas.addEventListener('mouseup touchend', (ev) =>
+            this.handleMouseup(ev as MouseEvent)
+        );
         htmlCanvas.addEventListener('click', (ev) =>
             this.handleMouseClicks(ev)
         );
