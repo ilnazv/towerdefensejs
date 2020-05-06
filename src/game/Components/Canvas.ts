@@ -26,6 +26,7 @@ export class Canvas {
             x: touchPoint.pageX - this.htmlCanvas.offsetLeft,
             y: touchPoint.pageY - this.htmlCanvas.offsetTop,
         };
+        this.handleOnClick(point);
         this.dragItem = this.items
             .filter((x) => ((x as unknown) as ITower).pointInPath)
             .find((x) =>
@@ -37,6 +38,18 @@ export class Canvas {
         const coords: IPoint = {
             x: ev.offsetX,
             y: ev.offsetY,
+        };
+        if (this.dragItem) {
+            this.dragItem.moveTo(coords);
+            this.update();
+        }
+    }
+
+    private handleTouchmove(ev: TouchEvent): void {
+        const touchPoint = ev.touches.length && ev.touches[0];
+        const coords: IPoint = {
+            x: touchPoint.pageX - this.htmlCanvas.offsetLeft,
+            y: touchPoint.pageY - this.htmlCanvas.offsetTop,
         };
         if (this.dragItem) {
             this.dragItem.moveTo(coords);
@@ -68,6 +81,9 @@ export class Canvas {
         );
         htmlCanvas.addEventListener('mousemove', (ev) =>
             this.handleMousemove(ev)
+        );
+        htmlCanvas.addEventListener('touchmove', (ev) =>
+            this.handleTouchmove(ev)
         );
         htmlCanvas.addEventListener('mouseup', (ev) =>
             this.handleMouseup(ev as MouseEvent)
