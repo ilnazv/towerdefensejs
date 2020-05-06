@@ -20,6 +20,19 @@ export class Canvas {
             ) as Item;
     }
 
+    private handleTouchstart(ev: TouchEvent): void {
+        const touchPoint = ev.touches.length && ev.touches[0];
+        const point: IPoint = {
+            x: touchPoint.pageX - this.htmlCanvas.offsetLeft,
+            y: touchPoint.pageY - this.htmlCanvas.offsetTop,
+        };
+        this.dragItem = this.items
+            .filter((x) => ((x as unknown) as ITower).pointInPath)
+            .find((x) =>
+                ((x as unknown) as ITower).pointInPath(this.ctx, point)
+            ) as Item;
+    }
+
     private handleMousemove(ev: MouseEvent): void {
         const coords: IPoint = {
             x: ev.offsetX,
@@ -31,7 +44,11 @@ export class Canvas {
         }
     }
 
-    private handleMouseup(ev: MouseEvent): void {
+    private handleMouseup(_ev: MouseEvent): void {
+        this.dragItem = undefined;
+    }
+
+    private handleTouchend(_ev: TouchEvent): void {
         this.dragItem = undefined;
     }
 
@@ -43,14 +60,20 @@ export class Canvas {
     }
 
     constructor(private htmlCanvas: HTMLCanvasElement, private size: ISize) {
-        htmlCanvas.addEventListener('mousedown touchstart', (ev) =>
-            this.handleMousedown(ev as MouseEvent)
+        htmlCanvas.addEventListener('mousedown', (ev) =>
+            this.handleMousedown(ev)
+        );
+        htmlCanvas.addEventListener('touchstart', (ev) =>
+            this.handleTouchstart(ev)
         );
         htmlCanvas.addEventListener('mousemove', (ev) =>
             this.handleMousemove(ev)
         );
-        htmlCanvas.addEventListener('mouseup touchend', (ev) =>
+        htmlCanvas.addEventListener('mouseup', (ev) =>
             this.handleMouseup(ev as MouseEvent)
+        );
+        htmlCanvas.addEventListener('touchend', (ev) =>
+            this.handleTouchend(ev)
         );
         htmlCanvas.addEventListener('click', (ev) =>
             this.handleMouseClicks(ev)
