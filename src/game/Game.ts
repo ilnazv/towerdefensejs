@@ -5,7 +5,7 @@ import { Canvas } from './Components/Canvas';
 import { CommandBar } from './Components/CommandBar';
 import { Button } from './Components/BasicElements/Button';
 import { Enemy } from './Components/Enemies/Enemy';
-import { IWaveSettings, ISize } from './Models';
+import { IWaveSettings } from './Models';
 import { IButtonParams } from './Components/BasicElements/Models';
 
 const defaultPath: Path = new Path([
@@ -62,7 +62,6 @@ export class TowerDefenseGame {
     private intervalId?: NodeJS.Timeout;
     private fps = 60;
     private lifes = 7;
-    private canvasSize: ISize;
     private waves: Map<number, IWaveSettings> = new Map([
         [
             1,
@@ -88,28 +87,24 @@ export class TowerDefenseGame {
     private bottomRightButton: IButtonParams;
 
     constructor(private htmlCanvas: HTMLCanvasElement) {
-        this.canvasSize = {
-            height: this.htmlCanvas.height,
-            width: this.htmlCanvas.width,
-        };
-        this.canvas = new Canvas(htmlCanvas, this.canvasSize);
+        this.canvas = new Canvas(htmlCanvas);
         this.bottomRightButton = {
             buttonHeight: 50,
             buttonWidth: 100,
-            leftTopX: this.canvasSize.width - 100,
-            leftTopY: this.canvasSize.height - 50,
+            leftTopX: this.canvas.size.width - 100,
+            leftTopY: this.canvas.size.height - 50,
         };
     }
 
     public testMode(): void {
-        const commandBar = new CommandBar(this.canvasSize);
+        const commandBar = new CommandBar(this.canvas.size);
         this.canvas.add(commandBar);
         this.canvas.update();
     }
 
     public initialize(): void {
         this.lifes = 7;
-        this.canvas = new Canvas(this.htmlCanvas, this.canvasSize);
+        this.canvas = new Canvas(this.htmlCanvas);
         this.enemies = [];
         this.canvas.add(...this.towers, this.path);
         this.showMainMenu();
@@ -151,7 +146,7 @@ export class TowerDefenseGame {
                         {
                             ...this.bottomRightButton,
                             buttonWidth: 150,
-                            leftTopX: this.canvasSize.width - 150,
+                            leftTopX: this.canvas.size.width - 150,
                         }
                     );
                     this.canvas.add(nextLevelButton);

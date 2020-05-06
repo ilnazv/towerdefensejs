@@ -14,7 +14,7 @@ const toggleLogsButton = document.getElementById(
     ElelementsIds.toggleLogsButtonId
 );
 
-toggleLogsButton.addEventListener('click', () => {
+toggleLogsButton?.addEventListener('click', () => {
     const logsEl = document.getElementById(ElelementsIds.logsElId);
     logsEl.toggleAttribute('hidden');
 });

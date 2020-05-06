@@ -74,7 +74,19 @@ export class Canvas {
         });
     }
 
-    constructor(private htmlCanvas: HTMLCanvasElement, private size: ISize) {
+    private setSize(): void {
+        this.htmlCanvas.width = window.innerWidth;
+        this.htmlCanvas.height = window.innerHeight;
+    }
+
+    public get size(): ISize {
+        return {
+            height: this.htmlCanvas.height,
+            width: this.htmlCanvas.width,
+        };
+    }
+
+    constructor(private htmlCanvas: HTMLCanvasElement) {
         htmlCanvas.addEventListener('mousedown', (ev) =>
             this.handleMousedown(ev)
         );
@@ -96,6 +108,7 @@ export class Canvas {
         htmlCanvas.addEventListener('click', (ev) =>
             this.handleMouseClicks(ev)
         );
+        this.setSize();
     }
 
     private get ctx(): CanvasRenderingContext2D {
