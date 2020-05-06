@@ -1,6 +1,7 @@
 import { IDrawable, IPoint, ISize, IClickable } from '../Models';
 import { Item } from './Towers/Towers';
 import { ITower } from './Towers/Models';
+import { log } from '../Utils';
 
 export class Canvas {
     public emptyColor = 'white';
@@ -26,6 +27,7 @@ export class Canvas {
             x: touchPoint.pageX - this.htmlCanvas.offsetLeft,
             y: touchPoint.pageY - this.htmlCanvas.offsetTop,
         };
+        log(`handleTouchstart: ${JSON.stringify(point)}`);
         this.handleOnClick(point);
         this.dragItem = this.items
             .filter((x) => ((x as unknown) as ITower).pointInPath)
