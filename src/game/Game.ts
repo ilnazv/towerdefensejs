@@ -81,6 +81,24 @@ export class TowerDefenseGame {
                 spawnSpeed: 500,
             },
         ],
+        [
+            3,
+            {
+                enemiesColor: 'green',
+                enemiesMoveSpeed: 0.5,
+                enemiesNumber: 10,
+                spawnSpeed: 100,
+            },
+        ],
+        [
+            4,
+            {
+                enemiesColor: 'brown',
+                enemiesMoveSpeed: 0.5,
+                enemiesNumber: 200,
+                spawnSpeed: 300,
+            },
+        ],
     ]);
     private gameIsRunning = false;
 
