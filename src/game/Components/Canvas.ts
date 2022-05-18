@@ -9,12 +9,22 @@ export class Canvas {
 
     private dragItem: Item;
 
+    private _dragNDropDisabled = false;
+
+    public DisableDragNDrop(): void {
+        this._dragNDropDisabled = true;
+    }
+
+    public EnabledDragNDrop(): void {
+        this._dragNDropDisabled = false;
+    }
+
     private handleMousedown(ev: MouseEvent): void {
         const point: IPoint = {
             x: ev.offsetX,
             y: ev.offsetY,
         };
-        this.dragItem = this.items
+        this.dragItem = this._dragNDropDisabled ? undefined : this.items
             .filter((x) => ((x as unknown) as ITower).pointInPath)
             .find((x) =>
                 ((x as unknown) as ITower).pointInPath(this.ctx, point)
@@ -74,9 +84,9 @@ export class Canvas {
         });
     }
 
-    private setSize(): void {
-        this.htmlCanvas.width = window.innerWidth;
-        this.htmlCanvas.height = window.innerHeight;
+    private setSize({ width, height }: ISize = { width: window.innerWidth, height: window.innerHeight }): void {
+        this.htmlCanvas.width = width;
+        this.htmlCanvas.height = height;
     }
 
     public get size(): ISize {
@@ -108,7 +118,10 @@ export class Canvas {
         htmlCanvas.addEventListener('click', (ev) =>
             this.handleMouseClicks(ev)
         );
-        this.setSize();
+        this.setSize({
+            height: 400,
+            width: 600
+        });
     }
 
     private get ctx(): CanvasRenderingContext2D {
