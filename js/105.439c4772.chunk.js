@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunktowerdefensejs=self.webpackChunktowerdefensejs||[]).push([[105],{267:function(e,n,t){t.r(n),t(45);var s,a,d=t(496),i=t(581);s=document.getElementById("root"),(a=document.createElement("canvas")).id=i.P.canvasId,a.width=600,a.height=400,new d.M(a).initialize(),s.appendChild(a)}}]);
+//# sourceMappingURL=105.439c4772.chunk.js.map

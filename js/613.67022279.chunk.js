@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunktowerdefensejs=self.webpackChunktowerdefensejs||[]).push([[613],{178:function(e,n,t){t.r(n),t(45);var a=t(496),i=t(581);n.default=function(e){var n=document.createElement("canvas");n.id=i.P.canvasId,n.width=600,n.height=400,new a.M(n).initialize(),e.appendChild(n)}}}]);
+//# sourceMappingURL=613.67022279.chunk.js.map
