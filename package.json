@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "homepage": "https://ilnazv.github.io/towerdefensejs/",
     "scripts": {
-        "build": "cross-env NODE_ENV=production webpack --config webpack/webpack.config.prod.js --colors",
+        "build": "cross-env NODE_ENV=production webpack --config webpack/webpack.config.prod.js",
         "start": "webpack-dev-server --open --config webpack/webpack.config.dev.js",
         "predeploy": "yarn build",
         "deploy": "gh-pages -d build"
