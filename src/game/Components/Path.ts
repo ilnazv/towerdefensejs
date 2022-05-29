@@ -28,7 +28,7 @@ export class Path implements IDrawable {
 
     public getPointAtPercent(percent: number): IPoint {
         const step = (this.length / 100) * percent;
-        const sections = [...this.percentPathMap.keys()];
+        const sections = [...Array.from(this.percentPathMap.keys())];
         const sectionKey = sections.find(
             ({ start, end }) => step >= start && step <= end
         );

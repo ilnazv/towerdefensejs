@@ -145,7 +145,7 @@ export class TowerDefenseGame {
     private start(): void {
         this.intervalId = setInterval(() => {
             this.run();
-        }, 1000 / this.fps);
+        }, 1000 / this.fps) as unknown as NodeJS.Timeout;
         this.gameIsRunning = true;
         this.startLevel(1);
     }

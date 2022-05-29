@@ -1,35 +1,41 @@
-const Path = require('path');
+const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { ModuleFederationPlugin } = require('webpack').container;
+
+const deps = require('../package.json').dependencies;
 
 module.exports = {
-    entry: {
-        app: Path.resolve(__dirname, '../src/index.ts'),
-    },
+    entry: './src/index.ts',
     output: {
-        path: Path.join(__dirname, '../build'),
-        filename: 'js/[name].js',
+        path: path.resolve(__dirname, '../build'),
     },
-    optimization: {
-        splitChunks: {
-            chunks: 'all',
-            name: false,
-        },
+    devServer: {
+        open: true,
+        host: 'localhost',
+        port: 8081,
     },
     plugins: [
         new CleanWebpackPlugin(),
         new CopyWebpackPlugin([
-            { from: Path.resolve(__dirname, '../public'), to: 'public' },
+            { from: path.resolve(__dirname, '../public'), to: 'public' },
         ]),
         new HtmlWebpackPlugin({
-            template: Path.resolve(__dirname, '../src/index.html'),
+            template: path.resolve(__dirname, '../src/index.html'),
+        }),
+        new ModuleFederationPlugin({
+            name: 'towerdefense',
+            filename: 'remoteEntry.js',
+            exposes: {
+                './App': './src/App',
+            }
         }),
     ],
     resolve: {
         extensions: ['.ts', '.js'],
         alias: {
-            '~': Path.resolve(__dirname, '../src'),
+            '~': path.resolve(__dirname, '../src'),
         },
     },
     module: {
