@@ -18,9 +18,11 @@ module.exports = {
     },
     plugins: [
         new CleanWebpackPlugin(),
-        new CopyWebpackPlugin([
-            { from: path.resolve(__dirname, '../public'), to: 'public' },
-        ]),
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: path.resolve(__dirname, '../public'), to: 'public' },
+            ],
+        }),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, '../src/index.html'),
         }),
@@ -29,7 +31,7 @@ module.exports = {
             filename: 'remoteEntry.js',
             exposes: {
                 './App': './src/App',
-            }
+            },
         }),
     ],
     resolve: {
