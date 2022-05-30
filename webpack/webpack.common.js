@@ -14,7 +14,7 @@ module.exports = {
     devServer: {
         open: true,
         host: 'localhost',
-        port: 8081,
+        port: 8082,
     },
     plugins: [
         new CleanWebpackPlugin(),
